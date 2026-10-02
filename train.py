@@ -166,6 +166,24 @@ def parse_args() -> argparse.Namespace:
         help="Total number of training epochs.",
     )
     parser.add_argument(
+        "--max_steps",
+        type=int,
+        default=-1,
+        help="If > 0, overrides num_train_epochs with maximum training steps.",
+    )
+    parser.add_argument(
+        "--max_train_samples",
+        type=int,
+        default=None,
+        help="For debugging or faster iteration, truncate the training split.",
+    )
+    parser.add_argument(
+        "--max_eval_samples",
+        type=int,
+        default=None,
+        help="For debugging or faster iteration, truncate the validation split.",
+    )
+    parser.add_argument(
         "--warmup_ratio",
         type=float,
         default=0.1,
@@ -333,9 +351,6 @@ def prepare_tokenized_datasets(
         sources = [str(s).strip() for s in examples[source_col]]
         targets = [str(t).strip() for t in examples[target_col]]
 
-        # Set source language on the tokenizer
-        tokenizer.src_lang = src_lang
-
         # Tokenize source texts
         model_inputs = tokenizer(
             sources,
@@ -345,17 +360,12 @@ def prepare_tokenized_datasets(
         )
 
         # Tokenize target texts with target language
-        # Modern Hugging Face tokenizers support text_target
-        tokenizer.src_lang = tgt_lang
         labels = tokenizer(
             text_target=targets,
             max_length=max_target_length,
             truncation=True,
             padding=False,
         )
-
-        # Restore source language on tokenizer
-        tokenizer.src_lang = src_lang
 
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
@@ -484,7 +494,6 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_name_or_path,
         src_lang=args.src_lang,
-        tgt_lang=args.tgt_lang,
     )
 
     logger.info(f"Loading pretrained model for '{args.model_name_or_path}'...")
@@ -507,6 +516,9 @@ def main():
         model.resize_token_embeddings(len(tokenizer))
         forced_bos_token_id = tokenizer.convert_tokens_to_ids(args.tgt_lang)
 
+    tokenizer.src_lang = args.src_lang
+    tokenizer.tgt_lang = args.tgt_lang
+
     if forced_bos_token_id is not None:
         model.config.forced_bos_token_id = forced_bos_token_id
         logger.info(f"Configured forced_bos_token_id: {forced_bos_token_id} for target '{args.tgt_lang}'")
@@ -523,6 +535,16 @@ def main():
         max_source_length=args.max_source_length,
         max_target_length=args.max_target_length,
     )
+
+    if args.max_train_samples is not None:
+        max_train = min(len(tokenized_train), args.max_train_samples)
+        tokenized_train = tokenized_train.select(range(max_train))
+        logger.info(f"Truncated training dataset to {max_train} samples.")
+
+    if args.max_eval_samples is not None:
+        max_eval = min(len(tokenized_val), args.max_eval_samples)
+        tokenized_val = tokenized_val.select(range(max_eval))
+        logger.info(f"Truncated validation dataset to {max_eval} samples.")
 
     # 4. Data Collator with Dynamic Padding
     data_collator = DataCollatorForSeq2Seq(
@@ -558,6 +580,7 @@ def main():
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         weight_decay=args.weight_decay,
         num_train_epochs=args.num_train_epochs,
+        max_steps=args.max_steps,
         warmup_ratio=args.warmup_ratio,
         logging_steps=args.logging_steps,
         fp16=args.fp16,

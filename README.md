@@ -111,13 +111,37 @@ python train.py \
 
 ---
 
-## 📈 Evaluation Metrics
+## 📈 Benchmark & Evaluation Results
 
-During each evaluation epoch, the pipeline decodes model predictions and computes:
-1. **SacreBLEU (`bleu`)**: Standard corpus-level BLEU score.
-2. **ChrF++ (`chrf++`)**: Character n-gram F-score augmented with word bigrams (`word_order=2`), especially effective for morphologically rich and low-resource languages.
+On the Nyishi translation dataset (`nyishi_train_cleaned.tsv` with strict 95% train / 5% validation split):
 
-The best checkpoint based on the selected metric (`--metric_for_best_model`) is tracked and automatically loaded at the end of training.
+| Metric | Score | Details |
+|---|---|---|
+| **Training Loss** | `2.02` (down from `7.22`) | 1 Epoch fine-tuning (1,734 steps) on NVIDIA GPU |
+| **Validation SacreBLEU** | **18.18** | Full 5% validation set (1,461 samples) |
+| **Validation ChrF++** | **42.12** | Character n-grams with word order = 2 |
+| **Test Sample SacreBLEU** | **17.60** | Independent sample evaluation |
+| **Test Sample ChrF++** | **42.89** | Independent sample evaluation |
+
+Detailed translations and evaluation scores are exported to [`evaluation_results.json`](./evaluation_results.json).
+
+---
+
+## 🧪 Testing & Standalone Evaluation
+
+You can run automated testing and translation sample generation using `test.py`:
+
+```bash
+python test.py \
+    --model_dir ./best_model \
+    --data_file nyishi_train_cleaned.tsv \
+    --source_column english \
+    --target_column nyishi \
+    --src_lang eng_Latn \
+    --tgt_lang hin_Deva \
+    --max_samples 100 \
+    --output_file evaluation_results.json
+```
 
 ---
 
