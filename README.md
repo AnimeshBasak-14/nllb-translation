@@ -369,11 +369,11 @@ The SpeechT5 + HiFi-GAN acoustic synthesis system was benchmarked across trainin
 | Metric | Measured Score | Relative Performance / Description |
 |:---|:---:|:---|
 | **Zero-Shot Initial Loss** | 3.1086 | Un-adapted baseline SpeechT5 loss on Apatani |
-| **Validation Spectrogram Loss** | **0.3698** | **88.1% relative error reduction** upon convergence |
-| **Held-Out Test Loss (25 clips)** | **0.4317** | Evaluated on 25 held-out audio recordings |
+| **Validation Spectrogram Loss (20 Epochs)** | **0.3026** | **90.3% relative error reduction** upon convergence |
+| **Held-Out Test Loss (25 clips)** | **0.3122** | Evaluated on unseen test audio recordings |
 | **Mel-Cepstral Distortion (MCD)** | Measured via DTW | Spectral distortion relative to human recording |
 | **Acoustic Fidelity** | 16 kHz Mono | High-frequency harmonics preserved by HiFi-GAN |
-| **Synthesized Audio Proof** | [`sample_synthesized.wav`](./best_apatani_tts/sample_synthesized.wav) | 16.64s duration, peak normalized to 0.95 |
+| **Synthesized Audio Proof** | [`sample_synthesized_20ep.wav`](./best_apatani_tts/sample_synthesized_20ep.wav) | 16 kHz Mono WAV, silence trimmed, peak normalized |
 
 ---
 
