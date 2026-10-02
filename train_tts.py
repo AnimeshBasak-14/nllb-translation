@@ -169,10 +169,17 @@ class ApataniTTSDataset(Dataset):
 
         data = data.astype(np.float32)
 
-        # Normalize audio amplitude
+        # Normalize audio amplitude and trim leading/trailing dead silence
         max_val = np.max(np.abs(data))
         if max_val > 0:
             data = data / max_val * 0.95
+            energy = np.abs(data)
+            thresh = max(0.01, 0.03 * np.max(energy))
+            voiced = np.where(energy > thresh)[0]
+            if len(voiced) > 1600:  # At least 0.1s voiced
+                start = max(0, voiced[0] - int(0.05 * self.target_sr))
+                end = min(len(data), voiced[-1] + int(0.05 * self.target_sr))
+                data = data[start:end]
 
         # Extract mel spectrogram frames
         audio_features = self.processor(audio_target=data, sampling_rate=self.target_sr, return_tensors="pt")
