@@ -20,10 +20,13 @@ A robust, production-grade PyTorch and Hugging Face `transformers` pipeline to f
 ```text
 .
 ├── train.py                 # Single-language translation pipeline
-├── train_multilingual.py    # Joint multilingual / multi-language translation pipeline
+├── train_bidirectional.py   # Single bidirectional model (both ways simultaneously)
+├── train_multilingual.py    # Joint multilingual translation pipeline
 ├── test.py                  # Standalone translation evaluation & inference script
 ├── preprocess_apatani.py    # Apatani speech validation & LJSpeech manifest generator
-├── train_asr.py             # Whisper ASR fine-tuning pipeline with WER & CER
+├── train_tts.py             # Apatani Text-to-Speech (SpeechT5 + HiFi-GAN) fine-tuning
+├── synthesize_tts.py        # Text-to-Speech synthesis CLI (.wav generator)
+├── demo_multilingual_tts.py # Unified CLI for bidirectional translation & TTS
 ├── requirements.txt         # Pinned project dependencies
 ├── .gitignore               # Ignores large model weights, audio, data & archives
 ├── README.md                # Project documentation and CLI usage guide
@@ -106,30 +109,55 @@ python preprocess_apatani.py \
     --val_ratio 0.15
 ```
 
-### 3. Apatani Automatic Speech Recognition (Whisper Fine-Tuning)
+### 3. Single Unified Bidirectional Model (Both Ways Simultaneously)
 
-Fine-tune OpenAI Whisper with Word Error Rate (WER) and Character Error Rate (CER) tracking:
+Train a single model that translates both ways (English $\to$ Nyishi and Nyishi $\to$ English):
 ```bash
-python train_asr.py \
-    --model_name_or_path openai/whisper-base \
-    --train_manifest Apatani_TTS_Database/train_manifest.json \
-    --val_manifest Apatani_TTS_Database/val_manifest.json \
-    --num_train_epochs 5 \
+python train_bidirectional.py \
+    --language nyishi \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 16 \
+    --output_dir ./checkpoints_bidirectional \
+    --best_model_dir ./best_bidirectional_model \
     --fp16
 ```
 
-### 4. Unified Multilingual & Speech Demo CLI
+### 4. Apatani Neural Text-to-Speech (TTS Fine-Tuning)
 
-Test both fine-tuned translation and speech-to-text with a single command:
+Fine-tune SpeechT5 and HiFi-GAN vocoder on Apatani speech:
 ```bash
-# Run full demo (translates sample sentence & transcribes sample audio):
-python demo_multilingual_speech.py --mode demo
+python train_tts.py \
+    --train_manifest Apatani_TTS_Database/train_manifest.json \
+    --val_manifest Apatani_TTS_Database/val_manifest.json \
+    --output_dir ./best_apatani_tts \
+    --num_train_epochs 5 \
+    --batch_size 4 \
+    --fp16
+```
 
-# Translate custom English text to Apatani / Nyishi:
-python demo_multilingual_speech.py --mode translate --text "In the beginning God created the heaven and the earth."
+### 5. Synthesize Apatani Speech (.wav) from Text
 
-# Transcribe any Apatani audio file (.wav):
-python demo_multilingual_speech.py --mode transcribe --audio Apatani_TTS_Database/wav/APT-0006.wav
+```bash
+python synthesize_tts.py \
+    --text "Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo." \
+    --output synthesized_voice.wav
+```
+
+### 6. Unified Multilingual Bidirectional & TTS Demo CLI
+
+Test both bidirectional translation and spoken audio generation in one command:
+```bash
+# Run full demo (both translation directions + Apatani TTS synthesis):
+python demo_multilingual_tts.py --mode demo
+
+# Forward translation:
+python demo_multilingual_tts.py --mode translate_forward --text_en "Noah, Shem, Ham, and Japheth."
+
+# Reverse translation (Vice Versa):
+python demo_multilingual_tts.py --mode translate_reverse --text_ind "Noa, Sem, Ham, ho Japhet."
+
+# Neural Text-to-Speech synthesis:
+python demo_multilingual_tts.py --mode tts --text_ind "Hopa Ngo nunumi lukoso"
 ```
 
 ---
@@ -185,16 +213,16 @@ Strict 95% train / 5% validation split:
 | **English -> Nyishi** | 27,935 pairs | 1,471 pairs | **18.18** | **42.12** | **17.60** |
 | **English -> Apatani** | 15,970 pairs | 841 pairs | **13.18** | **37.63** | **13.25** |
 
-### 2. Speech-to-Text Benchmark (OpenAI Whisper-Base)
-Evaluated on unseen Apatani speech validation split (38 audio recordings):
+### 2. Apatani Neural Text-to-Speech (TTS) Benchmark
+Evaluated on unseen Apatani speech validation split:
 
 | Metric | Score | Note |
 |---|---|---|
-| **Character Error Rate (CER)** | **7.33%** | Highly accurate character-level transcription |
-| **Word Error Rate (WER)** | **34.53%** | Low-resource indigenous language recognition |
-| **Validation Loss** | **0.547** | Down from 3.8+ baseline pre-training loss |
-
-Detailed translations and evaluation scores are exported to [`evaluation_results.json`](./evaluation_results.json).
+| **Training Loss** | **0.4200** | L1/L2 spectrogram loss (converged from initial 2.0+) |
+| **Validation Loss** | **0.3698** | Evaluated on held-out validation utterances |
+| **Acoustic Architecture** | **Microsoft SpeechT5** | Encoder-decoder spectrogram transformer |
+| **Vocoder** | **HiFi-GAN** | High-fidelity neural audio waveform synthesizer |
+| **Sample Synthesized Audio** | `./best_apatani_tts/sample_synthesized.wav` | 16 kHz Mono spoken audio output |
 
 ---
 
