@@ -1,0 +1,71 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets
+.env
+.env.*
+*.env
+
+# Machine Learning: Checkpoints, Artifacts, and Saved Models
+checkpoints/
+results/
+best_model/
+output/
+outputs/
+saved_models/
+*.pt
+*.pth
+*.bin
+*.safetensors
+runs/
+wandb/
+.tensorboard/
+
+# Datasets and raw data files
+data/
+datasets/
+*.tsv
+*.csv
+*.parquet
+*.jsonl
+
+# IDEs and OS metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
