@@ -19,11 +19,16 @@ A robust, production-grade PyTorch and Hugging Face `transformers` pipeline to f
 
 ```text
 .
-├── train.py                 # Main training, evaluation, and checkpointing script
-├── requirements.txt         # Project dependencies (transformers, evaluate, sacrebleu, etc.)
-├── .gitignore               # Machine learning & Python ignores (data, checkpoints, venvs)
-├── README.md                # Project documentation and usage guide
-└── nyishi_train_cleaned.tsv # (Local dataset, excluded from git)
+├── train.py                 # Single-language translation pipeline
+├── train_multilingual.py    # Joint multilingual / multi-language translation pipeline
+├── test.py                  # Standalone translation evaluation & inference script
+├── preprocess_apatani.py    # Apatani speech validation & LJSpeech manifest generator
+├── train_asr.py             # Whisper ASR fine-tuning pipeline with WER & CER
+├── requirements.txt         # Pinned project dependencies
+├── .gitignore               # Ignores large model weights, audio, data & archives
+├── README.md                # Project documentation and CLI usage guide
+├── evaluation_results.json  # Exported test benchmark results
+└── TSV data/                # Parallel translation datasets (Adi, Apatani, Galo, Nyishi, Tagin)
 ```
 
 ---
@@ -52,21 +57,66 @@ pip install -r requirements.txt
 
 ---
 
-## 📊 Dataset Format
+## 📊 Supported Datasets
 
-The pipeline natively supports `.tsv`, `.csv`, `.json`, `.parquet`, or Hugging Face Hub datasets. 
+The repository includes support for 5 major indigenous languages of Arunachal Pradesh:
 
-For TSV/CSV, the file should contain source and target columns (e.g., `nyishi_train_cleaned.tsv`):
-```text
-english	nyishi
-Adam, Seth, Enosh;	Adam, Set, Inos;
-Kenan, Mahalalel, Jared;	Kenan, Mahalalel, Jared;
-...
+| Language | Dataset File | Parallel Sentence Pairs | Script |
+|---|---|---|---|
+| **Adi** | `TSV data/adi_train.tsv` | **28,766** | Latin |
+| **Apatani** | `TSV data/apatani_train.tsv` | **16,811** | Latin |
+| **Galo** | `TSV data/galo_train.tsv` | **6,450** | Latin |
+| **Nyishi** | `TSV data/nyishi_train.tsv` | **29,406** | Latin |
+| **Tagin** | `TSV data/tagin_train.tsv` | **15,975** | Latin |
+| **Total** | | **97,408** | |
+
+Additionally, an **Apatani Speech & TTS Database** is supported (`Apatani_TTS_Database/`):
+- **251 audio clips** (~1.15 hours) at 22,050 Hz Mono with paired transcriptions in `sentences.txt`.
+
+---
+
+## ⚡ Running the Pipelines
+
+### 1. Unified Multilingual Translation (Any / All 5 Languages)
+
+Train on all 5 languages simultaneously with language tags:
+```bash
+python train_multilingual.py \
+    --language all \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 16 \
+    --fp16
 ```
 
-The script automatically splits any provided dataset into:
-- **95%** Training
-- **5%** Validation
+Or train specifically on a single language (e.g., Apatani):
+```bash
+python train_multilingual.py \
+    --language apatani \
+    --num_train_epochs 2 \
+    --per_device_train_batch_size 16 \
+    --fp16
+```
+
+### 2. Apatani Speech Preprocessing & LJSpeech Manifest Generation
+
+Preprocess audio, normalize transcripts, and create standard LJSpeech metadata:
+```bash
+python preprocess_apatani.py \
+    --data_dir Apatani_TTS_Database \
+    --val_ratio 0.15
+```
+
+### 3. Apatani Automatic Speech Recognition (Whisper Fine-Tuning)
+
+Fine-tune OpenAI Whisper with Word Error Rate (WER) and Character Error Rate (CER) tracking:
+```bash
+python train_asr.py \
+    --model_name_or_path openai/whisper-small \
+    --train_manifest Apatani_TTS_Database/train_manifest.json \
+    --val_manifest Apatani_TTS_Database/val_manifest.json \
+    --num_train_epochs 5 \
+    --fp16
+```
 
 ---
 

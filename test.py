@@ -105,9 +105,21 @@ def parse_args() -> argparse.Namespace:
 def load_evaluation_data(data_file: str, src_col: str, tgt_col: str, max_samples: int = 0) -> pd.DataFrame:
     ext = Path(data_file).suffix.lower()
     if ext == ".tsv":
-        df = pd.read_csv(data_file, sep="\t")
+        with open(data_file, "r", encoding="utf-8", errors="replace") as fp:
+            first_line = fp.readline().strip().split("\t")
+        has_header = any(h.lower() in [src_col.lower(), tgt_col.lower(), "source", "target", "src", "tgt"] for h in first_line)
+        if has_header:
+            df = pd.read_csv(data_file, sep="\t")
+        else:
+            df = pd.read_csv(data_file, sep="\t", header=None, names=[src_col, tgt_col])
     elif ext == ".csv":
-        df = pd.read_csv(data_file)
+        with open(data_file, "r", encoding="utf-8", errors="replace") as fp:
+            first_line = fp.readline().strip().split(",")
+        has_header = any(h.lower() in [src_col.lower(), tgt_col.lower()] for h in first_line)
+        if has_header:
+            df = pd.read_csv(data_file)
+        else:
+            df = pd.read_csv(data_file, header=None, names=[src_col, tgt_col])
     elif ext in [".json", ".jsonl"]:
         df = pd.read_json(data_file, lines=(ext == ".jsonl"))
     elif ext == ".parquet":

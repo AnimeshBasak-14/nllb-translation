@@ -54,13 +54,22 @@ runs/
 wandb/
 .tensorboard/
 
-# Datasets and raw data files
+# Datasets, audio, and raw data files
 data/
 datasets/
 *.tsv
 *.csv
 *.parquet
 *.jsonl
+*.zip
+*.tar.gz
+*.wav
+*.mp3
+*.flac
+Apatani_TTS_Database/
+TSV data/
+checkpoints_*/
+best_*
 
 # IDEs and OS metadata
 .DS_Store
