@@ -8,7 +8,7 @@ done
 echo "=== Initial bidirectional model evaluation finished and saved! ==="
 
 echo "=== Step 1: Starting 20-Epoch High-Fidelity Apatani TTS Training ==="
-.venv/bin/python -u train_tts.py \
+.venv/bin/python -u tts/train_tts.py \
     --train_manifest Apatani_TTS_Database/train_manifest.json \
     --val_manifest Apatani_TTS_Database/val_manifest.json \
     --test_manifest Apatani_TTS_Database/test_manifest.json \
@@ -22,12 +22,12 @@ echo "=== Step 1: Starting 20-Epoch High-Fidelity Apatani TTS Training ==="
 echo "=== Step 1 Complete: 20-Epoch Apatani TTS model successfully trained and saved to ./best_apatani_tts ==="
 
 echo "=== Step 2: Generating sample speech from updated TTS model ==="
-.venv/bin/python synthesize_tts.py \
+.venv/bin/python tts/synthesize_tts.py \
     --text "Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo." \
     --output ./best_apatani_tts/sample_synthesized_20ep.wav
 
 echo "=== Step 3: Starting Extended 3-Epoch Bidirectional Translation Training ==="
-.venv/bin/python -u train_bidirectional.py \
+.venv/bin/python -u mte/train_bidirectional.py \
     --train_file data/nyishi_train.tsv \
     --val_file data/nyishi_val.tsv \
     --test_file data/nyishi_test.tsv \

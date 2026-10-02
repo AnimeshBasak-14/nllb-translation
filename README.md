@@ -262,8 +262,8 @@ where $c_d(t)$ denotes the $d$-th Mel-Frequency Cepstral Coefficient (excluding 
 3. **Filtering**: Dropped empty strings, identical source-target copies, and corrupt rows.
 4. **Symmetric Bidirectional Expansion**:
    From each clean pair $(E_i, N_i)$, two training samples were constructed:
-   $$\text{Sample}_A = \left( \text{Source: } E_i, \, \text{Target: } N_i, \, \text{src\_lang: } \texttt{eng\_Latn}, \, \text{tgt\_lang: } \texttt{hin\_Deva} \right)$$
-   $$\text{Sample}_B = \left( \text{Source: } N_i, \, \text{Target: } E_i, \, \text{src\_lang: } \texttt{hin\_Deva}, \, \text{tgt\_lang: } \texttt{eng\_Latn} \right)$$
+   - **Forward Sample ($A$)**: Input $E_i$ (`eng_Latn`) $\longrightarrow$ Target $N_i$ (`hin_Deva`)
+   - **Reverse Sample ($B$)**: Input $N_i$ (`hin_Deva`) $\longrightarrow$ Target $E_i$ (`eng_Latn`)
    This doubled the effective corpus to 52,560 training samples, enforcing symmetric linguistic capability.
 
 ### 4.2 Phase 2: Speech Signal Processing and Acoustic Feature Extraction
@@ -413,20 +413,31 @@ Generated sample waveform [`best_apatani_tts/sample_synthesized.wav`](./best_apa
 
 ```text
 .
-├── prepare_splits.py                 # Deterministic 90/5/5 & 80/10/10 partitioning engine
-├── train_bidirectional.py            # Unified bidirectional NLLB training pipeline
-├── train_tts.py                      # SpeechT5 + HiFi-GAN Apatani TTS training engine
-├── synthesize_tts.py                 # Standalone Apatani speech synthesis CLI
+├── mte/                              # Machine Translation Engine (Nyishi <-> English)
+│   ├── train_bidirectional.py        # Unified bidirectional NLLB training pipeline
+│   ├── train.py                      # Baseline single-direction training engine
+│   ├── test.py                       # Standalone evaluation & benchmark script (BLEU / ChrF++)
+│   ├── evaluation_results.json       # Benchmark metrics and sample predictions
+│   └── README.md                     # MTE-specific documentation
+├── tts/                              # Neural Text-to-Speech Engine (Apatani)
+│   ├── train_tts.py                  # SpeechT5 + HiFi-GAN acoustic training engine
+│   ├── synthesize_tts.py             # Apatani speech synthesis CLI
+│   ├── preprocess_apatani.py         # Audio validator, resampler, and LJSpeech manifest builder
+│   └── README.md                     # TTS-specific documentation
+├── best_bidirectional_model/         # Fine-tuned 600M parameter bidirectional NLLB checkpoint (sharded)
+├── best_apatani_tts/                 # Fine-tuned SpeechT5 + HiFi-GAN TTS checkpoint (sharded)
+├── submission_tts_wavs.zip           # Submission-ready synthesized WAV archive (25 test samples)
+├── translations_submission.tsv       # Submission-ready MT translation TSV (1,461 test pairs)
 ├── demo.py                           # Unified CLI demonstrating MT and TTS inference
 ├── generate_hackathon_submission.py  # Competition submission generator (WAV zip, TSV, MCD)
-├── preprocess_apatani.py             # Audio validator, resampler, and LJSpeech manifest builder
-├── test.py                           # Standalone evaluation benchmark script for MT
-├── train.py                          # Unidirectional baseline training engine
+├── prepare_splits.py                 # Deterministic 90/5/5 & 80/10/10 partitioning engine
 ├── run_pipeline_chain.sh             # End-to-end background execution chain
 ├── requirements.txt                  # Pinned dependencies
-├── .gitignore                        # Protection against binary weights and raw audio caches
+├── .gitignore                        # Standard ignore rules
 └── README.md                         # In-depth technical and scientific report
 ```
+
+> **Dataset Privacy & Model Availability**: In accordance with dataset distribution guidelines, raw training corpora and raw voice databases are maintained privately and excluded from version control. Pretrained fine-tuned model checkpoints, standalone inference engines, test predictions, and evaluation suites are fully provided.
 
 ---
 
@@ -462,7 +473,7 @@ This generates:
 Train the unified bidirectional NLLB model:
 
 ```bash
-python train_bidirectional.py \
+python mte/train_bidirectional.py \
     --train_file data/nyishi_train.tsv \
     --val_file data/nyishi_val.tsv \
     --test_file data/nyishi_test.tsv \
@@ -479,21 +490,22 @@ python train_bidirectional.py \
 Train the Apatani SpeechT5 acoustic model:
 
 ```bash
-python train_tts.py \
+python tts/train_tts.py \
     --train_manifest Apatani_TTS_Database/train_manifest.json \
     --val_manifest Apatani_TTS_Database/val_manifest.json \
     --test_manifest Apatani_TTS_Database/test_manifest.json \
     --output_dir ./best_apatani_tts \
     --batch_size 4 \
     --learning_rate 2e-5 \
-    --num_train_epochs 5 \
+    --num_train_epochs 20 \
+    --gradient_accumulation_steps 2 \
     --fp16
 ```
 
 Synthesize arbitrary Apatani text into a WAV file:
 
 ```bash
-python synthesize_tts.py \
+python tts/synthesize_tts.py \
     --text "Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo." \
     --output ./synthesized_apatani.wav \
     --model_dir ./best_apatani_tts

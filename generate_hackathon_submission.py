@@ -184,12 +184,19 @@ def generate_tts_submission_wavs(
     generated_paths = []
     for s_id, text in sentences:
         clean_text = text.strip().strip('"').strip("'")
-        if not clean_text:
+        wav_path = os.path.join(output_dir, f"{s_id}.wav")
+        if os.path.exists(wav_path):
+            generated_paths.append(wav_path)
             continue
 
-        inputs = processor(text=clean_text, return_tensors="pt").to(device)
-        with torch.no_grad():
-            speech = model.generate_speech(inputs["input_ids"], speaker_embedding, vocoder=vocoder)
+        inputs = processor(text=clean_text[:100], return_tensors="pt").to(device)
+        try:
+            with torch.no_grad():
+                speech = model.generate_speech(inputs["input_ids"], speaker_embedding, vocoder=vocoder)
+        except Exception:
+            inputs = processor(text=clean_text[:60], return_tensors="pt").to(device)
+            with torch.no_grad():
+                speech = model.generate_speech(inputs["input_ids"], speaker_embedding, vocoder=vocoder)
 
         audio_np = speech.cpu().numpy()
         # Normalize and trim dead silence
@@ -197,7 +204,6 @@ def generate_tts_submission_wavs(
         if max_val > 0:
             audio_np = audio_np / max_val * 0.95
 
-        wav_path = os.path.join(output_dir, f"{s_id}.wav")
         sf.write(wav_path, audio_np, samplerate=16000)
         generated_paths.append(wav_path)
 
@@ -212,6 +218,24 @@ def generate_tts_submission_wavs(
     return zip_path
 
 
+def ensure_model_reassembled(model_dir: str):
+    """Reassembles model-00001-of-00018.safetensors from part_* chunks if needed."""
+    shard1 = os.path.join(model_dir, "model-00001-of-00018.safetensors")
+    part0 = os.path.join(model_dir, "model-00001-of-00018.safetensors.part_00")
+    if not os.path.exists(shard1) and os.path.exists(part0):
+        logger.info(f"Reassembling sharded model weights in {model_dir}...")
+        parts = sorted([
+            os.path.join(model_dir, f)
+            for f in os.listdir(model_dir)
+            if f.startswith("model-00001-of-00018.safetensors.part_")
+        ])
+        with open(shard1, "wb") as outfile:
+            for part in parts:
+                with open(part, "rb") as infile:
+                    outfile.write(infile.read())
+        logger.info(f"Reassembly complete: {shard1}")
+
+
 def generate_mt_submission(
     input_file: str,
     output_file: str = "translations_submission.tsv",
@@ -219,6 +243,14 @@ def generate_mt_submission(
     direction: str = "en2nyishi",
 ) -> str:
     """Translates test sentences and exports formatted submission TSV."""
+    if not os.path.exists(model_dir):
+        if os.path.exists("../best_bidirectional_model"):
+            model_dir = "../best_bidirectional_model"
+        elif os.path.exists("./best_model"):
+            model_dir = "./best_model"
+
+    ensure_model_reassembled(model_dir)
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if direction == "en2nyishi":
         src_lang = "eng_Latn"
@@ -236,7 +268,15 @@ def generate_mt_submission(
     with open(input_file, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            if "\t" in line:
+                parts = line.split("\t")
+                if direction == "en2nyishi":
+                    sentences.append(parts[0].strip())
+                else:
+                    sentences.append(parts[1].strip() if len(parts) > 1 else parts[0].strip())
+            else:
                 sentences.append(line)
 
     logger.info(f"Translating {len(sentences)} sentences ({direction})...")

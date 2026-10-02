@@ -39,37 +39,32 @@ venv.bak/
 .env.*
 *.env
 
-# Machine Learning: Checkpoints, Artifacts, and Saved Models
+# Temporary training checkpoints & logs
 checkpoints/
-results/
+checkpoints_*/
 best_model/
+results/
 output/
 outputs/
 saved_models/
-*.pt
-*.pth
-*.bin
-*.safetensors
 runs/
 wandb/
 .tensorboard/
+*.log
 
-# Datasets, audio, and raw data files
+# Datasets and audio databases (per user instruction: do not upload)
 data/
-datasets/
-*.tsv
-*.csv
-*.parquet
-*.jsonl
-*.zip
-*.tar.gz
-*.wav
-*.mp3
-*.flac
 Apatani_TTS_Database/
-TSV data/
-checkpoints_*/
-best_*
+Apatani_TTS_Database.zip
+nyishi_train_cleaned.tsv
+
+# Unpacked submission audio dirs
+submission_tts_wavs/
+
+# Monolithic weights exceeding GitHub's 100MB per-file limit (preserved as <85MB .part_* chunks)
+best_bidirectional_model/model-00001-of-00018.safetensors
+*/model.safetensors
+*.safetensors.bak
 
 # IDEs and OS metadata
 .DS_Store
@@ -78,4 +73,3 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-*.log

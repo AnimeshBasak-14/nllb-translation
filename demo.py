@@ -23,6 +23,24 @@ from transformers import (
 )
 
 
+def ensure_model_reassembled(model_dir: str):
+    """Reassembles model-00001-of-00018.safetensors from part_* chunks if needed."""
+    shard1 = os.path.join(model_dir, "model-00001-of-00018.safetensors")
+    part0 = os.path.join(model_dir, "model-00001-of-00018.safetensors.part_00")
+    if not os.path.exists(shard1) and os.path.exists(part0):
+        print(f"Reassembling sharded model weights in {model_dir}...")
+        parts = sorted([
+            os.path.join(model_dir, f)
+            for f in os.listdir(model_dir)
+            if f.startswith("model-00001-of-00018.safetensors.part_")
+        ])
+        with open(shard1, "wb") as outfile:
+            for part in parts:
+                with open(part, "rb") as infile:
+                    outfile.write(infile.read())
+        print("Reassembly complete.")
+
+
 def translate(
     text: str,
     direction: str = "en2nyishi",
@@ -34,6 +52,8 @@ def translate(
             model_dir = "./best_model"
         else:
             raise FileNotFoundError(f"Model checkpoint directory not found at: {model_dir}")
+
+    ensure_model_reassembled(model_dir)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 

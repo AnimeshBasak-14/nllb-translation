@@ -1,0 +1,59 @@
+{
+  "metrics": {
+    "sacrebleu": 17.604,
+    "chrf++": 42.8951
+  },
+  "sample_count": 100,
+  "samples": [
+    {
+      "source": "Since then we have a great high priest who has passed through the heavens, Jesus, the Son of God, let us hold fast our confession.",
+      "reference": "Hoqgab ngulv mwwjw kunam mwwjwnam sam vdwb gvbwl doogtuj. Hoggab ngulug nyub But koi albo ak doodwn, mwv Pwnbog dook ura jaqhv hvvc pakun, Jisu Pwnbog Ko Tuupv.",
+      "prediction": "Hoqgab ngulv Pwnbog Ko Tuup Jisu, Pwnbog ao gvda mwlw hoqgv haanbo nyubbov, hoqgab ngulv ngulug benam mam mwwpa dvn."
+    },
+    {
+      "source": "say, Thus says the Lord God : A great eagle with great wings and long pinions, rich in plumage of many colors, came to Lebanon and took the top of the cedar.",
+      "reference": "beto, soq sib Pwnbo At Sw bedo: kangam jaq dvb naleqgo vm reenbo/poonbo vcjaqb alap labt tvl xookam dortbo ak Lebanonho jaranum hoo sidar niqtuqho hopnum.",
+      "prediction": "beto, Soq sib Pwnbo At Sw bedo: Lvpw atwg vnyiqkv hoo vnyiq-vnyiqkv vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-vnyiq vnyiq-"
+    },
+    {
+      "source": "For they would come up with their livestock and their tents; they would come like locusts in number—both they and their camels could not be counted—so that they laid waste the land as they came in.",
+      "reference": "Hoggab bulv bulug tuun-mee lvgab la bulug tombu tulu lvgab haado; bulv kaiya poogub takam jaranam hvb haado—bulv la bulug svdam tulungam xila maadwn—hoqgab hwdlo bulv haaikam gvdangam bulv mucu-mviya kunum.",
+      "prediction": "Hoggab bulv bulug sviya lvgab hoo bulug tombu lvgab haanum; bulv svvda hvb haanumbulv la bulug svvda tulungam xika maanumho bulv gvdangam dooxa-xaaram dvb haanum."
+    },
+    {
+      "source": "Behold, he passes by me, and I see him not; he moves on, but I do not perceive him.",
+      "reference": "Kaato, mwv ngoqg dookub wpeq do, hoo ngo mwam kaapa ma; mwv wdo, hvbmabde ngo hengpa ma.",
+      "prediction": "Kaato, mwv ngoqg lvgab wpeq do, hoo ngo mwam kaapa ma; mwv wpeq do, hvbmabde ngo mwam cengma dvn."
+    },
+    {
+      "source": "We should not be like Cain, who was of the evil one and murdered his brother. And why did he murder him? Because his own deeds were evil and his brother’s righteous.",
+      "reference": "Ngulv Keenwg nyinam hvb nyidub nyiky maadwn, mwv almanbo akwg nyiib nyinum, hoo kokw so mwv atwg boram Abelnvn mengnum. Keen hoggab mwwg atwg boram mengnum? Hv hvbaloqkam Keenwg nyinam bon tuluhv almanum, hvbmabde mwwg bor Abel nyinam bon tuluhv albo bonwb nyinum.",
+      "prediction": "Ngulv Kain hvb nyima dvn, mwv Dvrwqbo hoqgv, mwwg vbw-boram mengnum. Hoggab mwv mwam mengnum? Hoggab mwwg atwg bon nyinamv almanum hoo mwwg vbw-boram jvqtw jaqb nyinum."
+    },
+    {
+      "source": "And the king of Assyria brought people from Babylon, Cuthah, Avva, Hamath, and Sepharvaim, and placed them in the cities of Samaria instead of the people of Israel. And they took possession of Samaria and lived in its cities.",
+      "reference": "Hoo Assiriyag lvpw atv Bebilon hoqgv, Kuta hoqgv, Abba hoqgv, Hamat hoqgv, hoo Separbaim hoqgv nyiilungam boolayil, hoo Israelwg nyiilu kwlib bulam Samariya bopam tuluho pvvnum. Hoo bulv Samariyangam gumn naaknum hoo hoq bopam tuluho bulv doonum.",
+      "prediction": "Hoo Assiriyag lvpw atv Bebilon hoqgv, Kuta, Avba, Hamat, hoo Separbaim hoqgv nyiilungam boolin kunum, hoo bulam Samariyag bopam tuluho Israel nyiilug pengko ho pvvlwqnum. Hoo bulv Samariya mam naareqnum hoo hoq bopam tuluho doonum."
+    },
+    {
+      "source": "They cried out with a loud voice, “O Sovereign Lord, holy and true, how long before you will judge and avenge our blood on those who dwell on the earth?”",
+      "reference": "Bulv vc alwb sogoql benum, “Mwlwngam ator yanbo, dvrwq bvla jvqtw bo At Swv! No hwdlo aalam gvda gvt so doonbo nyi tulungam bulv ngulam mengk gab bulam pw-hwwl laqm-baqm tayin?”",
+      "prediction": "Bulv benum, Pwnbo At Swa, dvrwqbo hoo jvqtw jaqb, no swcw nvg aoho doonbo nyi tulug aoho ngulug nyixiaqkam jvqtw jaqb jvqtw dvn?"
+    },
+    {
+      "source": "I bless the Lord who gives me counsel; in the night also my heart instructs me.",
+      "reference": "Ngo At Swn paqdwn hiyv ngam tomswr-hony dvn; aiyamkam ngoqg hangv ngam mwwpa mvdwn.",
+      "prediction": "Ngo At Swn paqdwn hiyv ngam tomswr-honynam mam jitayin; aoho ngoqg hangv ngam tomswr-honynam mam tomswr-honynum."
+    },
+    {
+      "source": "The carved images of their gods you shall burn with fire. You shall not covet the silver or the gold that is on them or take it for yourselves, lest you be ensnared by it, for it is an abomination to the Lord your God.",
+      "reference": "Bulug pwnbo tulug guss pwnam tulungam no wm lvgab parxa tayin. No bulug doognam rupam la hunam kaaby maabv, ho no atgab naamabv, hvb nyima baloqkam hoqhv nam pwd-poto gob nyitayin, hoggab hoqhv noqg Pwnbo At Sw gab bulum-kac dvb nyidwn.",
+      "prediction": "Bulug pwnbo tulug pwnbo tulungam nulv wm lvgab wm tayin. Bulug aoho doonbo rupam ho hunam nulv mwwdwq maabv ho nulv atv hoq tulu ham naamabv, hvbmabde nulv hoq tulu hoqgv noqg Pwnbo At Swg oyum dvb nyidwn."
+    },
+    {
+      "source": "Then they captured the king and brought him up to the king of Babylon at Riblah, and they passed sentence on him.",
+      "reference": "Ho bulv lvpw atam nootunum hoo mwam Bebilonwg lvpw at dook Ribla gvdaho boanum, hoo mwam bulv mengd kub hwwbwq kunum.",
+      "prediction": "Ho bulv lvpw atam naareqnum hoo mwam Bebilonwg lvpw at dookub Ribla ho boanum, hoo bulv mwam pw-hwwtayin."
+    }
+  ]
+}
