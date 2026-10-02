@@ -11,6 +11,7 @@ Demonstrates:
 import argparse
 import os
 import sys
+import numpy as np
 import soundfile as sf
 import torch
 from transformers import (
@@ -164,5 +165,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import numpy as np
     main()

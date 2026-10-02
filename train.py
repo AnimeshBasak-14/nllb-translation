@@ -257,6 +257,12 @@ def load_and_split_data(
     Loads dataset from local file or Hugging Face Hub, cleans missing/null rows,
     and applies a strict train/validation split (95% train, 5% val by default).
     """
+    if data_file and not os.path.exists(data_file):
+        for fallback in ["data/nyishi_train.tsv", "TSV data/nyishi_train.tsv", "nyishi_train_cleaned.tsv"]:
+            if os.path.exists(fallback):
+                data_file = fallback
+                break
+
     if data_file and os.path.exists(data_file):
         logger.info(f"Loading local dataset from: {data_file}")
         ext = Path(data_file).suffix.lower()

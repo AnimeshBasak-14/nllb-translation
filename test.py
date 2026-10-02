@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data_file",
         type=str,
-        default="nyishi_train_cleaned.tsv",
+        default="data/nyishi_test.tsv",
         help="Path to dataset file (.tsv, .csv, .json, .parquet).",
     )
     parser.add_argument(
@@ -103,6 +103,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_evaluation_data(data_file: str, src_col: str, tgt_col: str, max_samples: int = 0) -> pd.DataFrame:
+    if not os.path.exists(data_file):
+        for fallback in ["data/nyishi_test.tsv", "data/nyishi_val.tsv", "nyishi_train_cleaned.tsv", "TSV data/nyishi_train.tsv"]:
+            if os.path.exists(fallback):
+                data_file = fallback
+                break
     ext = Path(data_file).suffix.lower()
     if ext == ".tsv":
         with open(data_file, "r", encoding="utf-8", errors="replace") as fp:
