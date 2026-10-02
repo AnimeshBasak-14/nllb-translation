@@ -14,6 +14,11 @@ This directory contains the acoustic modeling and speech synthesis pipeline for 
 - `synthesize_tts.py`: Command-line interface for synthesizing arbitrary Apatani text into spoken WAV audio.
 - `preprocess_apatani.py`: Audio preprocessing, header inspection, rational resampling (22.05 kHz -> 16 kHz), and LJSpeech format metadata generation.
 
+## Checkpoint Architecture
+- The fine-tuned acoustic model is stored in `best_apatani_tts/`, sharded into 8 `.safetensors` files (`model-00001-of-00008` to `00008`), all $\le 79.3$ MB.
+- Includes `speaker_embedding.pt` (learned 512-dim continuous speaker vector), character tokenizer (`spm_char.model`), and acoustic configs.
+- Fully compatible with standard HuggingFace `SpeechT5ForTextToSpeech.from_pretrained("./best_apatani_tts")` with zero manual reassembly needed.
+
 ## Benchmarks
 - **Zero-Shot Initial Loss**: 3.1086
 - **Validation Spectrogram Loss (20 Epochs)**: **0.3026** *(90.3% relative error reduction)*

@@ -15,6 +15,16 @@ This directory contains the single unified bidirectional sequence-to-sequence ne
 - `test.py`: Standalone evaluation benchmark script for SacreBLEU and ChrF++ (word_order=2).
 - `evaluation_results.json`: Output metrics and sample translation logs.
 
+## Checkpoint Architecture & Weight Reassembly
+- The model is sharded into 18 `.safetensors` files in `best_bidirectional_model/` to comply with GitHub's 100 MB per-file limit without Git LFS.
+- Shards `00002` through `00018` are each $\le 80.1$ MB.
+- Shard 1 (`model-00001-of-00018.safetensors`, 1.0 GB) is chunked into 13 `.part_*` files (`part_00` to `part_12`, each 80 MB).
+- **Auto-Reassembly**: `mte/test.py`, `demo.py`, and `generate_hackathon_submission.py` automatically detect if shard 1 is missing and reassemble it in $<1.5$ seconds upon execution.
+- **Manual Reassembly**:
+  ```bash
+  cat best_bidirectional_model/model-00001-of-00018.safetensors.part_* > best_bidirectional_model/model-00001-of-00018.safetensors
+  ```
+
 ## Benchmarks
 - **Validation SacreBLEU**: **22.64**
 - **Validation ChrF++**: **42.47**

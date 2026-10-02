@@ -459,8 +459,45 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 8.2 Partitioning Execution
-Partition the parallel text and audio datasets into strict train, validation, and test splits:
+### 8.2 Model Checkpoint Architecture & Weight Reassembly
+
+To ensure complete, standalone reproducibility while adhering to GitHub's 100 MB per-file limit and avoiding external Git LFS bandwidth restrictions, both fine-tuned models are stored in sharded `.safetensors` format:
+
+#### 1. Apatani Neural TTS Checkpoint (`best_apatani_tts/`)
+- Sharded into 8 `.safetensors` files (`model-00001-of-00008.safetensors` to `00008`, each between 23 MB and 79.3 MB).
+- Contains the continuous speaker embedding tensor (`speaker_embedding.pt`, 512 dimensions), tokenizer, and acoustic configurations.
+- **Loading**: Directly compatible with standard HuggingFace `transformers`. No reassembly needed:
+  ```python
+  from transformers import SpeechT5ForTextToSpeech, SpeechT5Processor, SpeechT5HifiGan
+  import torch
+
+  processor = SpeechT5Processor.from_pretrained("./best_apatani_tts")
+  model = SpeechT5ForTextToSpeech.from_pretrained("./best_apatani_tts").to("cuda")
+  vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan").to("cuda")
+  speaker_embedding = torch.load("./best_apatani_tts/speaker_embedding.pt").to("cuda")
+  ```
+
+#### 2. Bidirectional NLLB Translation Checkpoint (`best_bidirectional_model/`)
+- Sharded into 18 `.safetensors` files. Shards `00002` through `00018` are all $\le 80.1$ MB each.
+- Shard 1 (`model-00001-of-00018.safetensors`, 1.0 GB, containing the 256,206-token shared vocabulary embedding tensor) is divided into 13 binary chunks of 80 MB each: `model-00001-of-00018.safetensors.part_00` to `part_12`.
+- **Automatic Reassembly**: All provided scripts (`demo.py`, `generate_hackathon_submission.py`, `mte/test.py`) feature **built-in auto-reassembly**. If `model-00001-of-00018.safetensors` is not present, the scripts automatically detect the `.part_*` files and concatenate them in $< 1.5$ seconds upon execution.
+- **Manual Reassembly (for custom scripts / standalone HuggingFace pipelines)**:
+  If you are using external code or custom scripts, run this single shell command to concatenate the shard:
+  ```bash
+  cat best_bidirectional_model/model-00001-of-00018.safetensors.part_* > best_bidirectional_model/model-00001-of-00018.safetensors
+  ```
+  Once concatenated, standard HuggingFace `AutoModelForSeq2SeqLM.from_pretrained("./best_bidirectional_model")` will load all 18 shards transparently:
+  ```python
+  from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+  tokenizer = AutoTokenizer.from_pretrained("./best_bidirectional_model", src_lang="eng_Latn", tgt_lang="hin_Deva")
+  model = AutoModelForSeq2SeqLM.from_pretrained("./best_bidirectional_model").to("cuda")
+  ```
+
+---
+
+### 8.3 Partitioning Execution (For Raw Data)
+If you have access to private parallel corpora and audio archives, partition them using:
 
 ```bash
 python prepare_splits.py
@@ -469,9 +506,11 @@ This generates:
 - `data/nyishi_train.tsv`, `data/nyishi_val.tsv`, `data/nyishi_test.tsv`
 - `Apatani_TTS_Database/train_manifest.json`, `val_manifest.json`, `test_manifest.json`
 
-### 8.3 Machine Translation Training and Evaluation
-Train the unified bidirectional NLLB model:
+---
 
+### 8.4 Retraining Pipelines (Optional)
+
+#### Retraining the Bidirectional Model
 ```bash
 python mte/train_bidirectional.py \
     --train_file data/nyishi_train.tsv \
@@ -486,9 +525,7 @@ python mte/train_bidirectional.py \
     --fp16
 ```
 
-### 8.4 Text-to-Speech Training and Audio Synthesis
-Train the Apatani SpeechT5 acoustic model:
-
+#### Retraining the Apatani SpeechT5 Acoustic Model
 ```bash
 python tts/train_tts.py \
     --train_manifest Apatani_TTS_Database/train_manifest.json \
@@ -502,8 +539,20 @@ python tts/train_tts.py \
     --fp16
 ```
 
-Synthesize arbitrary Apatani text into a WAV file:
+---
 
+### 8.5 Direct Inference Examples
+
+#### 1. Translate Single Sentences (CLI)
+```bash
+# English to Nyishi
+python demo.py --task translate_en2nyi --text_en "They entered the house and saw the child."
+
+# Nyishi to English
+python demo.py --task translate_nyi2en --text_nyi "Mbulu nyamnamlo lulengto ho omi anya Mariam lolo goyinto."
+```
+
+#### 2. Synthesize Single Apatani Utterance (CLI)
 ```bash
 python tts/synthesize_tts.py \
     --text "Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo." \
@@ -511,39 +560,57 @@ python tts/synthesize_tts.py \
     --model_dir ./best_apatani_tts
 ```
 
-### 8.5 Generating Hackathon Submission Archives
-Use `generate_hackathon_submission.py` to produce official evaluation deliverables:
+---
 
-#### 1. Batch Speech Synthesis for Hackathon Test Sentences
-Generates 16 kHz `.wav` files and packages them into a submission `.zip`:
+### 8.6 Generating Official Hackathon Submissions
+
+The submission pipeline is fully automated via `generate_hackathon_submission.py`.
+
+#### Step 1: Generate Machine Translation Submission (`translations_submission.tsv`)
+Provide any input file containing test sentences (either raw text lines, TSV with sentences in the first column, or evaluation pairs):
+
+```bash
+# English -> Nyishi translation submission
+python generate_hackathon_submission.py \
+    --mode mt \
+    --input_file data/nyishi_test.tsv \
+    --direction en2nyishi \
+    --output_file translations_submission.tsv
+```
+This produces `translations_submission.tsv` with formatted tab-separated columns:
+```tsv
+source	translation
+And have you forgotten the exhortation...	Ngoqg ko tuupv, At Swg tomswrnam mam nulv mwwpa maabv...
+```
+
+#### Step 2: Generate Text-to-Speech Submission (`submission_tts_wavs.zip`)
+Provide a text file, TSV, or JSON manifest containing Apatani test sentences:
+
 ```bash
 python generate_hackathon_submission.py \
     --mode tts \
     --input_file Apatani_TTS_Database/test_manifest.json \
     --output_dir submission_tts_wavs
 ```
+This performs:
+1. Speech synthesis through SpeechT5 + HiFi-GAN vocoder.
+2. Peak normalization and boundary silence trimming.
+3. Export of individual 16,000 Hz Mono `.wav` files into `submission_tts_wavs/`.
+4. Automated packaging into `submission_tts_wavs.zip` (ready for hackathon portal upload).
 
-#### 2. Batch Machine Translation for Hackathon Test Sentences
-Translates test sentences and outputs the official formatted TSV:
-```bash
-python generate_hackathon_submission.py \
-    --mode mt \
-    --input_file test_sentences.txt \
-    --direction en2nyishi \
-    --output_file translations_submission.tsv
-```
+#### Step 3: Compute Mel-Cepstral Distortion (Acoustic Evaluation)
+To calculate objective spectral distance (MCD in dB) between any generated `.wav` and reference ground-truth audio:
 
-#### 3. Compute Mel-Cepstral Distortion (MCD)
-Calculate acoustic fidelity against reference audio:
 ```bash
 python generate_hackathon_submission.py \
     --mode mcd \
-    --ref_wav reference_groundtruth.wav \
-    --synth_wav generated_speech.wav
+    --ref_wav ground_truth_sample.wav \
+    --synth_wav submission_tts_wavs/sample_001.wav
 ```
 
-#### 4. Run Unified Demonstration CLI
-Run an end-to-end interactive demonstration across all tasks:
+#### Step 4: Run Unified Verification Demonstration
+To run an interactive demonstration across all translation directions and speech synthesis in one command:
+
 ```bash
 python demo.py --task all
 ```
