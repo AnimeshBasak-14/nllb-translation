@@ -7,6 +7,54 @@
 
 ---
 
+## ⚡ Quick Start: How to Run in 60 Seconds
+
+### 1. Installation
+```bash
+git clone https://github.com/AnimeshBasak-14/nllb-translation.git
+cd nllb-translation
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Run All-in-One Interactive Demonstration
+```bash
+python demo.py --task all
+```
+*This executes English $\to$ Nyishi translation, Nyishi $\to$ English reverse translation, and synthesizes 16 kHz Apatani audio into `demo_synthesized.wav`.*
+
+### 3. Translate Single Sentences
+```bash
+# English -> Nyishi
+python demo.py --task translate_en2nyi --text_en "They entered the house and saw the child."
+
+# Nyishi -> English
+python demo.py --task translate_nyi2en --text_nyi "Mbulu nyamnamlo lulengto ho omi anya Mariam lolo goyinto."
+```
+
+### 4. Synthesize Apatani Speech (.wav)
+```bash
+python tts/synthesize_tts.py \
+    --text "Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo." \
+    --output ./apatani_speech.wav
+```
+
+### 5. Generate Competition Submissions
+```bash
+# 1. Machine Translation Submission (outputs translations_submission.tsv)
+python generate_hackathon_submission.py --mode mt --input_file test_sentences.txt --direction en2nyishi --output_file translations_submission.tsv
+
+# 2. Text-to-Speech Submission (outputs submission_tts_wavs.zip)
+python generate_hackathon_submission.py --mode tts --input_file test_manifest.json --output_dir submission_tts_wavs
+
+# 3. Audio Spectral Fidelity Evaluation (Mel-Cepstral Distortion in dB)
+python generate_hackathon_submission.py --mode mcd --ref_wav reference.wav --synth_wav apatani_speech.wav
+```
+
+> **Note on Weight Reassembly**: You do **not** need to manually merge model shards. All scripts (`demo.py`, `generate_hackathon_submission.py`, `mte/test.py`) feature **built-in auto-reassembly** that transparently reconstructs the model weights on the first run in $<1.5$ seconds.
+
+---
+
 ## Table of Contents
 1. [Introduction and Problem Formulation](#1-introduction-and-problem-formulation)
    - 1.1 Linguistic Typology of the Tani Languages
@@ -558,6 +606,24 @@ python tts/synthesize_tts.py \
     --text "Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo." \
     --output ./synthesized_apatani.wav \
     --model_dir ./best_apatani_tts
+```
+
+#### 3. Programmatic Python API
+You can import translation and speech synthesis functions directly into any Python script:
+```python
+from demo import translate, synthesize
+
+# 1. Translate English -> Nyishi
+nyishi_text = translate("They entered the house and saw the child.", direction="en2nyishi")
+print("Nyishi:", nyishi_text)
+
+# 2. Translate Nyishi -> English
+english_text = translate("Mbulu nyamnamlo lulengto ho omi anya Mariam lolo goyinto.", direction="nyishi2en")
+print("English:", english_text)
+
+# 3. Synthesize Apatani Speech (outputs 16 kHz Mono WAV)
+wav_path = synthesize("Hopa Ngo nunumi lukoso, nunuka sangomi hena siiyo.", output_path="apatani_speech.wav")
+print("Synthesized audio written to:", wav_path)
 ```
 
 ---
