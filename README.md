@@ -111,11 +111,25 @@ python preprocess_apatani.py \
 Fine-tune OpenAI Whisper with Word Error Rate (WER) and Character Error Rate (CER) tracking:
 ```bash
 python train_asr.py \
-    --model_name_or_path openai/whisper-small \
+    --model_name_or_path openai/whisper-base \
     --train_manifest Apatani_TTS_Database/train_manifest.json \
     --val_manifest Apatani_TTS_Database/val_manifest.json \
     --num_train_epochs 5 \
     --fp16
+```
+
+### 4. Unified Multilingual & Speech Demo CLI
+
+Test both fine-tuned translation and speech-to-text with a single command:
+```bash
+# Run full demo (translates sample sentence & transcribes sample audio):
+python demo_multilingual_speech.py --mode demo
+
+# Translate custom English text to Apatani / Nyishi:
+python demo_multilingual_speech.py --mode translate --text "In the beginning God created the heaven and the earth."
+
+# Transcribe any Apatani audio file (.wav):
+python demo_multilingual_speech.py --mode transcribe --audio Apatani_TTS_Database/wav/APT-0006.wav
 ```
 
 ---
@@ -163,15 +177,22 @@ python train.py \
 
 ## 📈 Benchmark & Evaluation Results
 
-On the Nyishi translation dataset (`nyishi_train_cleaned.tsv` with strict 95% train / 5% validation split):
+### 1. Translation Benchmarks (Meta NLLB-200-Distilled-600M)
+Strict 95% train / 5% validation split:
 
-| Metric | Score | Details |
+| Task / Language | Train Split | Validation Split | Val SacreBLEU | Val ChrF++ | Test BLEU |
+|---|---|---|---|---|---|
+| **English -> Nyishi** | 27,935 pairs | 1,471 pairs | **18.18** | **42.12** | **17.60** |
+| **English -> Apatani** | 15,970 pairs | 841 pairs | **13.18** | **37.63** | **13.25** |
+
+### 2. Speech-to-Text Benchmark (OpenAI Whisper-Base)
+Evaluated on unseen Apatani speech validation split (38 audio recordings):
+
+| Metric | Score | Note |
 |---|---|---|
-| **Training Loss** | `2.02` (down from `7.22`) | 1 Epoch fine-tuning (1,734 steps) on NVIDIA GPU |
-| **Validation SacreBLEU** | **18.18** | Full 5% validation set (1,461 samples) |
-| **Validation ChrF++** | **42.12** | Character n-grams with word order = 2 |
-| **Test Sample SacreBLEU** | **17.60** | Independent sample evaluation |
-| **Test Sample ChrF++** | **42.89** | Independent sample evaluation |
+| **Character Error Rate (CER)** | **7.33%** | Highly accurate character-level transcription |
+| **Word Error Rate (WER)** | **34.53%** | Low-resource indigenous language recognition |
+| **Validation Loss** | **0.547** | Down from 3.8+ baseline pre-training loss |
 
 Detailed translations and evaluation scores are exported to [`evaluation_results.json`](./evaluation_results.json).
 
